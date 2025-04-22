@@ -7,55 +7,135 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+# Library Management System API
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A Laravel-based RESTful API for managing a library, featuring:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Authors**, **Categories**, **Books**, **Loans**, **Reservations**, **Fines**, **Users**, **Roles**, **System Settings**
+- **JWT authentication** for secure access
+- **CRUD operations** on all resources
+- **Filtering** & **pagination** on listings
+- **Role-based** access (Admin, Assistant, Member)
+- **Service layer** for clean architecture
+- **Scheduled tasks** (cron) for overdue loan processing
+- **Seeders** for initial data
+- **Postman collection** for testing
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Table of Contents
 
-## Learning Laravel
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [Environment Setup](#environment-setup)
+4. [Database Setup](#database-setup)
+5. [Migrations & Seeders](#migrations--seeders)
+6. [Service Container Bindings](#service-container-bindings)
+7. [Routing & Middleware](#routing--middleware)
+8. [Scheduling & Cron](#scheduling--cron)
+9. [Postman Collection](#postman-collection)
+10. [Testing](#testing)
+11. [Contributing](#contributing)
+12. [License](#license)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Requirements
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- PHP 8.x
+- Composer
+- Laravel 12.x
+- SQLite / MySQL (or preferred database)
+- Node.js & npm (for front‑end scaffolding if needed)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Installation
 
-## Laravel Sponsors
+```bash
+# Clone repo
+git clone https://github.com/yourusername/library-management.git
+cd library-management
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Install dependencies
+composer install
+```
 
-### Premium Partners
+## Environment Setup
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development/)**
-- **[Active Logic](https://activelogic.com)**
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Generate application key:
+   ```bash
+   php artisan key:generate
+   ```
+3. Configure database in `.env`:
+   ```dotenv
+   DB_CONNECTION=sqlite
+   # DB_DATABASE=${PWD}/database/database.sqlite
+   # or for MySQL:
+   # DB_CONNECTION=mysql
+   # DB_HOST=127.0.0.1
+   # DB_PORT=3306
+   # DB_DATABASE=library_management
+   # DB_USERNAME=root
+   # DB_PASSWORD=secret
+   ```
 
-## Contributing
+## Database Setup
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Run migrations (should automatically create a database.sqlite, if not create manualy):
+   ```bash
+   php artisan migrate
+   ```
+2. Seed initial data:
+   ```bash
+   php artisan db:seed
+   ```
 
-## Code of Conduct
+## Migrations & Seeders
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- **Migrations** for tables: `roles`, `users`, `authors`, `categories`, `books`, `author_book`, `loans`, `reservations`, `fines`, `system_settings`.
+- **Seeders**: `RoleSeeder`, `AuthorSeeder`, `CategorySeeder`, `BookSeeder`, `SystemSettingSeeder`, `UserSeeder`, `LoanSeeder`, `ReservationSeeder`, `FineSeeder`
 
-## Security Vulnerabilities
+## Service Container Bindings
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Bindings in `app/Providers/AppServiceProvider.php`:
+```php
+$this->app->singleton(\App\Services\RoleService::class);
+$this->app->singleton(\App\Services\UserService::class);
+$this->app->singleton(\App\Services\AuthorService::class);
+$this->app->singleton(\App\Services\CategoryService::class);
+$this->app->singleton(\App\Services\BookService::class);
+$this->app->singleton(\App\Services\LoanService::class);
+$this->app->singleton(\App\Services\ReservationService::class);
+$this->app->singleton(\App\Services\FineService::class);
+$this->app->singleton(\App\Services\SystemSettingService::class);
+```
+
+## Routing & Middleware
+
+- **API routes** live in `routes/api.php`.
+- **Public**: `POST /api/auth/register`, `POST /api/auth/login`.
+- **Protected**: All other resources under `jwt.auth`.
+- Middleware alias and registration in `bootstrap/app.php`:
+  ```php
+  ->withMiddleware(function (Middleware $middleware) {
+      $middleware->alias([
+          'jwt.auth' => JWTAuthenticate::class,
+      ]);
+  })
+  ```
+
+## Postman Collection
+
+Import `postman_collection.json` in `/docs` or root. Includes:
+- Auth: Register, Login
+- CRUD for all resources
+- Test scripts for status codes, data validation
+- Environment variables: `base_url`, `token`
+
+### Postman
+
+- Use Collection Runner to execute all endpoint tests.
+- Ensure `{{token}}` is set after login.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT © Anton Osypchuk
